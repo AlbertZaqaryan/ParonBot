@@ -107,6 +107,7 @@ def get_country(currency):
 # ====== /start ======
 @bot.message_handler(commands=["start"])
 def start(message):
+    bot.send_photo(message.chat.id, open('Image.png', 'rb'))
     markup = types.InlineKeyboardMarkup(row_width=4)
 
     buttons = [types.InlineKeyboardButton(cur, callback_data=f"from_{cur}") for cur in CURRENCIES]
