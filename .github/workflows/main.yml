@@ -12,19 +12,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Deploy to EC2 via SSH
+    - name: Copy files to EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "."
+        target: "/home/ubuntu/ParonBot"
+
+    - name: Deploy via SSH
       uses: appleboy/ssh-action@v0.1.8
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        port: 22
         script: |
-          mv /home/ubuntu/.env /home/ubuntu/ParonBot/.env
           cd /home/ubuntu/ParonBot
-          sudo docker kill $(sudo docker ps -q)
-          sudo docker rm -f $(sudo docker ps -aq)
-          sudo docker rmi -f $(sudo docker images -aq)
-          sudo docker volume rm $(sudo docker volume ls -q)
+
+          sudo docker stop bot || true
+          sudo docker rm bot || true
+
           sudo docker build -t bot .
-          sudo docker run -d bot
+          
+          sudo docker run -d \
+            --name bot \
+            --restart always \
+            --env-file /home/ubuntu/ParonBot/.env \
+            bot
